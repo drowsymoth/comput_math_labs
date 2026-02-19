@@ -1,7 +1,5 @@
 #include <array>
-#include <cmath>
 #include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <random>
 #include <unordered_set>
@@ -116,6 +114,7 @@ void print_point(const point &a) {
   for (int i = 0; i < FEATURE_COUNT; i++) {
     printf("\t%f", a.coord[i]);
   }
+  printf("\n");
 }
 
 void print_cluster(const std::array<cluster, CLUSTER_COUNT> a) {
@@ -123,10 +122,6 @@ void print_cluster(const std::array<cluster, CLUSTER_COUNT> a) {
     printf("%d cluster countains points:\n", i);
     for (int j = 0; j < a[i].points.size(); j++) {
       print_point(a[i].points[j]);
-      // for (int k = 0; k < FEATURE_COUNT; k++) {
-      //   printf("\t %f", a[i].points[j].coord[k]);
-      // }
-      printf("\n");
     }
   }
 }
@@ -135,6 +130,7 @@ std::vector<point> read_csv_to_points(char *path) {
   std::vector<point> points;
   FILE *fp = fopen(path, "r");
   if (!fp) {
+    printf("File reading error\n");
     return {};
   }
 
@@ -150,24 +146,30 @@ std::vector<point> read_csv_to_points(char *path) {
     }
     points.push_back(temp);
   }
+  fclose(fp);
   return points;
 }
 
-int main() {
-  // std::vector<point> data = {
-  //     {{0.05f, -0.02f}},  {{-0.1f, 0.1f}},  {{0.2f, 0.0f}},
-  //     {{-0.05f, -0.15f}}, {{0.03f, 0.07f}}, {{-0.08f, 0.02f}},
-  //     {{0.10f, -0.05f}},  {{5.0f, 5.1f}},   {{4.9f, 5.2f}},
-  //     {{5.2f, 4.8f}},     {{5.1f, 5.0f}},   {{4.8f, 5.05f}},
-  //     {{5.3f, 4.9f}},     {{2.4f, 1.1f}},   {{2.6f, 0.9f}},
-  //     {{2.5f, 1.2f}},     {{0.8f, 0.4f}},   {{1.2f, 0.6f}},
-  //     {{-6.0f, 7.0f}},    {{10.0f, -3.0f}}};
-  std::vector<point> data = read_csv_to_points("Iris_copy.csv");
-  // for (point i : data) {
-  //   print_point(i);
-  //   printf("\n");
-  // }
+void write_centres_to_file(std::array<cluster, CLUSTER_COUNT> &a) {
+  FILE *fp = fopen("results.csv", "w");
+  char line[MAX_LINE] = "";
+  for (int i = 0; i < a.size(); i++) {
+    for (int j = 0; j < FEATURE_COUNT; j++) {
+      char buf[50];
+      sprintf(buf, "%f,", a[i].centre.coord[j]);
+      strcat(line, buf);
+    }
+    *strrchr(line, ',') = '\0';
+    strcat(line, "\n");
+  }
+  fprintf(fp, "%s", line);
+  fclose(fp);
+}
 
-  print_cluster(clustering(data, 0.1));
+int main() {
+  std::vector<point> data = read_csv_to_points("data/Iris_copy.csv");
+  std::array<cluster, CLUSTER_COUNT> clusters = clustering(data, 0.1);
+  print_cluster(clusters);
+  write_centres_to_file(clusters);
   return 0;
 }
